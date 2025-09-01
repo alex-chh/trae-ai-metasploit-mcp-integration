@@ -11,6 +11,7 @@ import sys
 import subprocess
 import json
 import time
+import getpass
 
 def banner():
     print("""    
@@ -252,7 +253,7 @@ def main():
     parser.add_argument('-t', '--transport', help='傳輸方式 (http 或 stdio)', default='http', choices=['http', 'stdio'])
     parser.add_argument('--host', help='HTTP 模式的主機地址', default='0.0.0.0')
     parser.add_argument('--port', help='HTTP 模式的端口', type=int, default=8085)
-    parser.add_argument('--msf-password', help='Metasploit RPC 密碼', default='yourpassword')
+    parser.add_argument('--msf-password', help='Metasploit RPC 密碼')
     parser.add_argument('--msf-server', help='Metasploit RPC 服務器地址', default='127.0.0.1')
     parser.add_argument('--msf-port', help='Metasploit RPC 端口', type=int, default=55553)
     parser.add_argument('--msf-ssl', help='Metasploit RPC 是否使用 SSL', action='store_true')
@@ -265,6 +266,32 @@ def main():
     args = parser.parse_args()
     
     banner()
+    
+    # 密碼安全檢查和互動輸入
+    if not args.msf_password or args.msf_password == 'yourpassword':
+        print("[!] 為了安全起見，不允許使用默認密碼或空密碼")
+        print("[*] 請設置一個安全的 Metasploit RPC 密碼")
+        while True:
+            password = getpass.getpass("[+] 請輸入 Metasploit RPC 密碼: ")
+            if not password:
+                print("[!] 密碼不能為空，請重新輸入")
+                continue
+            if password == 'yourpassword':
+                print("[!] 不能使用默認密碼 'yourpassword'，請設置其他密碼")
+                continue
+            if len(password) < 6:
+                print("[!] 密碼長度至少需要 6 個字符，請重新輸入")
+                continue
+            
+            # 確認密碼
+            confirm_password = getpass.getpass("[+] 請再次輸入密碼確認: ")
+            if password != confirm_password:
+                print("[!] 兩次輸入的密碼不一致，請重新輸入")
+                continue
+            
+            args.msf_password = password
+            print("[+] 密碼設置成功")
+            break
     
     # 如果只是生成配置文件且指定了遠程主機，則跳過依賴檢查
     if args.generate_trae_config and args.remote_host and not (args.start_msfrpcd or (not args.generate_trae_config)):
