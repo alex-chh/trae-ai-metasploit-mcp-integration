@@ -11,6 +11,7 @@ import sys
 import subprocess
 import json
 import time
+import getpass
 
 def banner():
     print("""    
@@ -20,6 +21,117 @@ def banner():
     │                                                 │
     └─────────────────────────────────────────────────┘
     """)
+
+def get_user_input():
+    """獲取使用者輸入的配置參數"""
+    print("[*] 請輸入系統配置參數:")
+    print()
+    
+    # 獲取 Metasploit RPC 服務器 IP
+    while True:
+        msf_server = input("請輸入 Metasploit RPC 服務器 IP 地址 [預設: 127.0.0.1]: ").strip()
+        if not msf_server:
+            msf_server = "127.0.0.1"
+        
+        # 簡單的 IP 地址格式驗證
+        import re
+        ip_pattern = r'^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+        if re.match(ip_pattern, msf_server):
+            break
+        else:
+            print("[!] 請輸入有效的 IP 地址格式")
+    
+    # 獲取 RPC 密碼
+    while True:
+        msf_password = getpass.getpass("請輸入 Metasploit RPC 密碼: ").strip()
+        if msf_password:
+            # 確認密碼
+            confirm_password = getpass.getpass("請再次輸入密碼以確認: ").strip()
+            if msf_password == confirm_password:
+                break
+            else:
+                print("[!] 密碼不匹配，請重新輸入")
+        else:
+            print("[!] 密碼不能為空")
+    
+    # 獲取 RPC 端口
+    while True:
+        try:
+            msf_port_input = input("請輸入 Metasploit RPC 端口 [預設: 55553]: ").strip()
+            if not msf_port_input:
+                msf_port = 55553
+            else:
+                msf_port = int(msf_port_input)
+                if not (1 <= msf_port <= 65535):
+                    raise ValueError("端口範圍應在 1-65535 之間")
+            break
+        except ValueError as e:
+            print(f"[!] 請輸入有效的端口號 (1-65535): {e}")
+    
+    # 獲取 MCP 服務器配置
+    while True:
+        mcp_host = input("請輸入 MCP 服務器監聽 IP 地址 [預設: 0.0.0.0]: ").strip()
+        if not mcp_host:
+            mcp_host = "0.0.0.0"
+        
+        # 驗證 IP 地址格式
+        if mcp_host == "0.0.0.0" or re.match(ip_pattern, mcp_host):
+            break
+        else:
+            print("[!] 請輸入有效的 IP 地址格式")
+    
+    while True:
+        try:
+            mcp_port_input = input("請輸入 MCP 服務器端口 [預設: 8085]: ").strip()
+            if not mcp_port_input:
+                mcp_port = 8085
+            else:
+                mcp_port = int(mcp_port_input)
+                if not (1 <= mcp_port <= 65535):
+                    raise ValueError("端口範圍應在 1-65535 之間")
+            break
+        except ValueError as e:
+            print(f"[!] 請輸入有效的端口號 (1-65535): {e}")
+    
+    # 是否使用 SSL
+    while True:
+        ssl_input = input("是否使用 SSL 連接? [y/N]: ").strip().lower()
+        if ssl_input in ['y', 'yes', '是']:
+            msf_ssl = True
+            break
+        elif ssl_input in ['n', 'no', '否', '']:
+            msf_ssl = False
+            break
+        else:
+            print("[!] 請輸入 y/yes/是 或 n/no/否")
+    
+    print()
+    print("[*] 配置摘要:")
+    print(f"    Metasploit RPC 服務器: {msf_server}:{msf_port}")
+    print(f"    SSL 連接: {'是' if msf_ssl else '否'}")
+    print(f"    MCP 服務器: {mcp_host}:{mcp_port}")
+    print()
+    
+    # 確認配置
+    while True:
+        confirm = input("確認以上配置? [Y/n]: ").strip().lower()
+        if confirm in ['y', 'yes', '是', '']:
+            break
+        elif confirm in ['n', 'no', '否']:
+            print("[*] 重新配置...")
+            print()
+            return get_user_input()  # 遞歸重新獲取配置
+        else:
+            print("[!] 請輸入 y/yes/是 或 n/no/否")
+    
+    return {
+        'msf_server': msf_server,
+        'msf_password': msf_password,
+        'msf_port': msf_port,
+        'msf_ssl': msf_ssl,
+        'mcp_host': mcp_host,
+        'mcp_port': mcp_port
+    }
 
 def check_prerequisites():
     """檢查必要的依賴是否已安裝"""
@@ -250,11 +362,11 @@ def generate_trae_config(msf_password, msf_server, msf_port, msf_ssl, payload_di
 def main():
     parser = argparse.ArgumentParser(description='MetasploitMCP 服務器啟動工具')
     parser.add_argument('-t', '--transport', help='傳輸方式 (http 或 stdio)', default='http', choices=['http', 'stdio'])
-    parser.add_argument('--host', help='HTTP 模式的主機地址', default='0.0.0.0')
-    parser.add_argument('--port', help='HTTP 模式的端口', type=int, default=8085)
-    parser.add_argument('--msf-password', help='Metasploit RPC 密碼', default='yourpassword')
-    parser.add_argument('--msf-server', help='Metasploit RPC 服務器地址', default='127.0.0.1')
-    parser.add_argument('--msf-port', help='Metasploit RPC 端口', type=int, default=55553)
+    parser.add_argument('--host', help='HTTP 模式的主機地址')
+    parser.add_argument('--port', help='HTTP 模式的端口', type=int)
+    parser.add_argument('--msf-password', help='Metasploit RPC 密碼')
+    parser.add_argument('--msf-server', help='Metasploit RPC 服務器地址')
+    parser.add_argument('--msf-port', help='Metasploit RPC 端口', type=int)
     parser.add_argument('--msf-ssl', help='Metasploit RPC 是否使用 SSL', action='store_true')
     parser.add_argument('--payload-dir', help='Payload 保存目錄')
     parser.add_argument('--mcp-path', help='MetasploitMCP 目錄路徑', default='.')
@@ -262,9 +374,41 @@ def main():
     parser.add_argument('--generate-trae-config', help='是否生成 Trae AI MCP 配置文件', action='store_true')
     parser.add_argument('--remote-host', help='遠程 MetasploitMCP 服務器 IP 地址（用於跨網絡連接）')
     parser.add_argument('--remote-port', help='遠程 MetasploitMCP 服務器端口（用於跨網絡連接）', type=int)
+    parser.add_argument('--interactive', help='使用互動模式獲取配置參數', action='store_true')
     args = parser.parse_args()
     
     banner()
+    
+    # 互動模式：獲取使用者輸入
+    if args.interactive or (not args.msf_password and not args.remote_host):
+        print("[*] 啟動互動配置模式")
+        user_config = get_user_input()
+        
+        # 使用使用者輸入覆蓋命令行參數
+        if not args.msf_server:
+            args.msf_server = user_config['msf_server']
+        if not args.msf_password:
+            args.msf_password = user_config['msf_password']
+        if not args.msf_port:
+            args.msf_port = user_config['msf_port']
+        if not args.msf_ssl:
+            args.msf_ssl = user_config['msf_ssl']
+        if not args.host:
+            args.host = user_config['mcp_host']
+        if not args.port:
+            args.port = user_config['mcp_port']
+    else:
+        # 非互動模式：使用預設值或命令行參數
+        if not args.host:
+            args.host = '0.0.0.0'
+        if not args.port:
+            args.port = 8085
+        if not args.msf_server:
+            args.msf_server = '127.0.0.1'
+        if not args.msf_port:
+            args.msf_port = 55553
+        if not args.msf_password:
+            args.msf_password = 'yourpassword'
     
     # 如果只是生成配置文件且指定了遠程主機，則跳過依賴檢查
     if args.generate_trae_config and args.remote_host and not (args.start_msfrpcd or (not args.generate_trae_config)):
