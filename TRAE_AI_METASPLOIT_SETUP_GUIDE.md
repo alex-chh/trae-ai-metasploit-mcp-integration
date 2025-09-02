@@ -52,9 +52,61 @@
 - [ ] Windows 能 ping 通 Kali Linux
 - [ ] 防火牆允許端口 8085 和 55553
 
-## 🚀 第一步：Kali Linux 端配置
+## 🚀 第一步：Kali Linux 端配置（推薦使用自動化腳本）
 
-### 1.1 檢查 Metasploit 是否已安裝
+### 方法一：使用自動化腳本（推薦新手）
+
+**🎉 新功能！** 現在提供一鍵自動化配置腳本，大大簡化了設置過程。
+
+#### 1.1 下載項目
+
+```bash
+# 克隆項目到家目錄
+cd ~
+git clone https://github.com/alex-chh/trae-ai-metasploit-mcp-integration.git
+cd trae-ai-metasploit-mcp-integration
+```
+
+#### 1.2 運行自動化腳本（互動模式）
+
+```bash
+# 使用互動模式（推薦新手）
+python3 start_metasploit_mcp.py --interactive
+```
+
+**腳本會引導您完成**：
+- 🔍 自動檢查 Metasploit Framework 安裝
+- 🔑 安全密碼設置（強制要求安全密碼）
+- 🌐 網絡配置（自動檢測 IP 地址）
+- 🚀 自動啟動所有必要服務
+- 📄 生成 Trae AI 配置文件
+
+#### 1.3 或者使用直接啟動模式
+
+```bash
+# 直接啟動（適合有經驗的用戶）
+python3 start_metasploit_mcp.py --start-msfrpcd --host 0.0.0.0 --port 8085
+```
+
+**腳本會自動完成**：
+- ✅ 檢查並安裝 MetasploitMCP 依賴
+- ✅ 啟動 Metasploit RPC 服務（端口 55553）
+- ✅ 啟動 MetasploitMCP 服務器（端口 8085）
+- ✅ 生成 Windows 客戶端配置文件
+- ✅ 提供詳細的狀態信息
+
+#### 1.4 安全功能說明
+
+**🔒 新增安全功能**：
+- **強制密碼驗證**：不允許使用默認密碼或空密碼
+- **密碼強度檢查**：最少 6 個字符，需要確認輸入
+- **安全提示**：互動式密碼設置，使用隱藏輸入
+
+### 方法二：手動配置（進階用戶）
+
+如果您偏好手動配置，請參考以下步驟：
+
+#### 1.1 檢查 Metasploit 是否已安裝
 
 ```bash
 # 打開終端，輸入以下命令
@@ -69,7 +121,7 @@ sudo apt update
 sudo apt install metasploit-framework
 ```
 
-### 1.2 下載 MetasploitMCP
+#### 1.2 下載 MetasploitMCP
 
 ```bash
 # 切換到家目錄
@@ -87,7 +139,7 @@ ls -la
 
 **預期結果**：看到 `MetasploitMCP.py` 和 `requirements.txt` 等文件
 
-### 1.3 安裝 Python 依賴
+#### 1.3 安裝 Python 依賴
 
 ```bash
 # 確保使用 Python 3.10+
@@ -102,15 +154,15 @@ pip3 install -r requirements.txt
 sudo pip3 install -r requirements.txt
 ```
 
-### 1.4 啟動 Metasploit RPC 服務
+#### 1.4 啟動 Metasploit RPC 服務
 
 ```bash
-# 啟動 RPC 服務（密碼設為 N0viru$123）
-msfrpcd -P N0viru$123 -S -a 0.0.0.0 -p 55553
+# 啟動 RPC 服務（請設置安全密碼，不要使用默認密碼）
+msfrpcd -P YOUR_SECURE_PASSWORD -S -a 0.0.0.0 -p 55553
 ```
 
 **重要說明**：
-- `-P N0viru$123`：設置 RPC 密碼
+- `-P YOUR_SECURE_PASSWORD`：設置安全的 RPC 密碼（至少 6 個字符）
 - `-S`：禁用 SSL（簡化配置）
 - `-a 0.0.0.0`：監聽所有網絡接口
 - `-p 55553`：使用端口 55553
@@ -119,7 +171,7 @@ msfrpcd -P N0viru$123 -S -a 0.0.0.0 -p 55553
 
 **保持這個終端窗口開啟！**
 
-### 1.5 啟動 MetasploitMCP 服務器
+#### 1.5 啟動 MetasploitMCP 服務器
 
 **打開新的終端窗口**，執行：
 
@@ -127,8 +179,8 @@ msfrpcd -P N0viru$123 -S -a 0.0.0.0 -p 55553
 # 進入 MetasploitMCP 目錄
 cd ~/MetasploitMCP
 
-# 設置環境變量
-export MSF_PASSWORD=N0viru$123
+# 設置環境變量（使用您設置的安全密碼）
+export MSF_PASSWORD=YOUR_SECURE_PASSWORD
 export MSF_SERVER=127.0.0.1
 export MSF_PORT=55553
 export MSF_SSL=false
@@ -141,7 +193,7 @@ python3 MetasploitMCP.py --transport http --host 0.0.0.0 --port 8085
 
 **保持這個終端窗口也開啟！**
 
-### 1.6 驗證服務器運行狀態
+#### 1.6 驗證服務器運行狀態
 
 **打開第三個終端窗口**，測試連接：
 
@@ -213,9 +265,23 @@ npx mcp-remote http://172.31.44.17:8085/sse --allow-http
 - 可以看到可用的工具列表
 - 按 Ctrl+C 退出測試
 
+### 2.5 獲取配置文件
+
+**如果您使用了自動化腳本**，配置文件已經自動生成：
+- 在 Kali Linux 上查找 `metasploit_mcp_trae_config.json` 文件
+- 將此文件傳輸到 Windows 電腦
+
+**如果您手動配置**，請創建配置文件（見下一步）。
+
 ## 🔧 第三步：Trae AI 配置
 
-### 3.1 創建 MCP 配置文件
+### 3.1 創建或使用 MCP 配置文件
+
+**方法一：使用自動生成的配置文件**（推薦）
+
+如果您使用了自動化腳本，請直接使用生成的 `metasploit_mcp_trae_config.json` 文件。
+
+**方法二：手動創建配置文件**
 
 在您的工作目錄中創建 `metasploit_mcp_config.json` 文件：
 
@@ -236,7 +302,6 @@ npx mcp-remote http://172.31.44.17:8085/sse --allow-http
 ```
 
 **重要**：將 `172.31.44.17` 替換為您的 Kali Linux 實際 IP 地址
-**注意**：Windows 端 IP 地址為 `10.0.0.85`
 
 ### 3.2 在 Trae AI 中添加 MCP 服務器
 
@@ -245,7 +310,7 @@ npx mcp-remote http://172.31.44.17:8085/sse --allow-http
 3. **選擇 "MCP"**
 4. **點擊右上角的 "+" 按鈕**
 5. **選擇 "手動添加"**
-6. **將上面的 JSON 配置粘貼到配置窗口中**
+6. **將配置文件內容粘貼到配置窗口中**
 7. **點擊 "確認"**
 
 ### 3.3 驗證 MCP 服務器狀態
@@ -293,9 +358,30 @@ npx mcp-remote http://172.31.44.17:8085/sse --allow-http
 2. 檢查網絡連通性：`ping 172.31.44.17`
 3. 檢查端口：`Test-NetConnection -ComputerName 172.31.44.17 -Port 8085`
 4. 檢查防火牆設置
-5. 重啟 MetasploitMCP 服務器
+5. 重新運行自動化腳本：`python3 start_metasploit_mcp.py --interactive`
 
-### 問題 2：MetasploitMCP 服務器啟動失敗
+### 問題 2：自動化腳本啟動失敗
+
+**症狀**：腳本報錯或無法完成配置
+
+**解決步驟**：
+1. 檢查 Python 版本：`python3 --version`（需要 3.10+）
+2. 檢查 Metasploit 安裝：`msfconsole -v`
+3. 檢查網絡連接和權限
+4. 使用互動模式重新運行：`python3 start_metasploit_mcp.py --interactive`
+5. 查看詳細錯誤信息並根據提示操作
+
+### 問題 3：密碼驗證失敗
+
+**症狀**：腳本提示密碼不安全或驗證失敗
+
+**解決步驟**：
+1. 確保密碼至少 6 個字符
+2. 不要使用默認密碼（如 'yourpassword'）
+3. 使用包含字母、數字和特殊字符的強密碼
+4. 確認密碼輸入一致
+
+### 問題 4：MetasploitMCP 服務器啟動失敗
 
 **症狀**：Python 腳本報錯或無法啟動
 
@@ -304,25 +390,27 @@ npx mcp-remote http://172.31.44.17:8085/sse --allow-http
 2. 重新安裝依賴：`pip3 install -r requirements.txt`
 3. 檢查 Metasploit RPC 服務是否運行：`netstat -tlnp | grep 55553`
 4. 檢查環境變量設置
+5. 使用自動化腳本重新配置
 
-### 問題 3：Metasploit RPC 服務無法啟動
+### 問題 5：Metasploit RPC 服務無法啟動
 
 **症狀**：msfrpcd 命令報錯
 
 **解決步驟**：
 1. 檢查 Metasploit 是否正確安裝：`msfconsole -v`
 2. 檢查端口是否被占用：`netstat -tlnp | grep 55553`
-3. 嘗試使用不同端口：`msfrpcd -P N0viru$123 -S -a 0.0.0.0 -p 55554`
+3. 嘗試使用不同端口：`msfrpcd -P YOUR_PASSWORD -S -a 0.0.0.0 -p 55554`
 4. 重啟系統後再試
+5. 使用自動化腳本的 `--start-msfrpcd` 選項
 
-### 問題 4：查詢或掃描功能不工作
+### 問題 6：查詢或掃描功能不工作
 
 **症狀**：Trae AI 回復錯誤或無響應
 
 **解決步驟**：
 1. 檢查 Metasploit 數據庫狀態：在 msfconsole 中執行 `db_status`
 2. 更新 Metasploit：`sudo apt update && sudo apt upgrade metasploit-framework`
-3. 重啟所有服務（RPC 和 MetasploitMCP）
+3. 重啟所有服務（使用自動化腳本重新啟動）
 4. 檢查 Kali Linux 系統日誌
 
 ## 📚 使用範例
@@ -359,19 +447,32 @@ npx mcp-remote http://172.31.44.17:8085/sse --allow-http
 
 配置成功後，建議閱讀以下文檔：
 
-1. **<mcfile name="TRAE_AI_METASPLOIT_COMPLETE_GUIDE.md" path="C:\\Users\\aduser\\Desktop\\tools\\TRAE_AI_METASPLOIT_COMPLETE_GUIDE.md"></mcfile>** - 完整使用指南
-2. **<mcfile name="TRAE_AI_METASPLOIT_EXAMPLES.md" path="C:\\Users\\aduser\\Desktop\\tools\\TRAE_AI_METASPLOIT_EXAMPLES.md"></mcfile>** - 基礎使用範例
-3. **<mcfile name="NETWORK_SCANNING_EXAMPLES.md" path="C:\\Users\\aduser\\Desktop\\tools\\NETWORK_SCANNING_EXAMPLES.md"></mcfile>** - 網絡掃描範例
-4. **<mcfile name="EXPLOIT_EXAMPLES.md" path="C:\\Users\\aduser\\Desktop\\tools\\EXPLOIT_EXAMPLES.md"></mcfile>** - 漏洞利用範例
+1. **TRAE_AI_METASPLOIT_COMPLETE_GUIDE.md** - 完整使用指南
+2. **TRAE_AI_METASPLOIT_EXAMPLES.md** - 基礎使用範例
+3. **NETWORK_SCANNING_EXAMPLES.md** - 網絡掃描範例
+4. **EXPLOIT_EXAMPLES.md** - 漏洞利用範例
 
 ## 🎯 快速啟動檢查清單
 
-每次使用前，請確認以下項目：
+### 首次設置（使用自動化腳本）
 
 **Kali Linux 端**：
-- [ ] Metasploit RPC 服務運行中（端口 55553）
-- [ ] MetasploitMCP 服務器運行中（端口 8085）
-- [ ] 網絡連接正常
+- [ ] 克隆項目：`git clone https://github.com/alex-chh/trae-ai-metasploit-mcp-integration.git`
+- [ ] 運行腳本：`python3 start_metasploit_mcp.py --interactive`
+- [ ] 按照提示完成配置
+- [ ] 確認所有服務正常運行
+
+**Windows 端**：
+- [ ] 安裝 Node.js 和 mcp-remote
+- [ ] 測試網絡連接
+- [ ] 獲取並使用生成的配置文件
+- [ ] 在 Trae AI 中配置 MCP 服務器
+
+### 日常使用檢查清單
+
+**Kali Linux 端**：
+- [ ] 運行：`python3 start_metasploit_mcp.py --start-msfrpcd --host 0.0.0.0 --port 8085`
+- [ ] 確認服務器狀態正常
 
 **Windows 端**：
 - [ ] Trae AI 中 MCP 服務器狀態為 "已連接"
@@ -388,16 +489,26 @@ npx mcp-remote http://172.31.44.17:8085/sse --allow-http
 如果遇到問題：
 
 1. **檢查本指南的故障排除部分**
-2. **向 Trae AI 詢問具體問題**：
+2. **使用自動化腳本的互動模式**：
+   ```bash
+   python3 start_metasploit_mcp.py --interactive
+   ```
+3. **向 Trae AI 詢問具體問題**：
    ```
    我在配置 MetasploitMCP 時遇到 [具體錯誤信息]，請幫我診斷
    ```
-3. **檢查系統日誌和錯誤信息**
-4. **參考官方文檔**
+4. **檢查系統日誌和錯誤信息**
+5. **參考官方文檔**
 
 ## 🎉 恭喜！
 
 如果您成功完成了所有步驟，現在您已經擁有了一個智能化的滲透測試環境！
+
+**新功能亮點**：
+- 🤖 **一鍵自動化**：自動化腳本大大簡化了配置過程
+- 🔒 **安全增強**：強制安全密碼驗證，提高系統安全性
+- 💬 **互動模式**：友好的互動式配置，適合新手使用
+- 📄 **自動配置**：自動生成 Trae AI 配置文件
 
 您可以用自然語言與 Metasploit 交互，大大簡化了複雜的安全測試工作流程。
 
@@ -406,6 +517,6 @@ npx mcp-remote http://172.31.44.17:8085/sse --allow-http
 ---
 
 *最後更新：2025年1月*
-*版本：1.0*
+*版本：2.0 - 添加自動化腳本和安全功能*
 
 **祝您使用愉快！** 🚀
