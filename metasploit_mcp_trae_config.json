@@ -4,7 +4,7 @@
             "command": "npx",
             "args": [
                 "mcp-remote",
-                "http://172.31.44.17:8085/sse",
+                "http://172.31.42.18:8085/sse",
                 "--allow-http"
             ],
             "env": {}
