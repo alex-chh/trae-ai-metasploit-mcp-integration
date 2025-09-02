@@ -416,86 +416,61 @@ def main():
                 print("[!] 密碼不能為空，請重新輸入")
                 continue
             if password == 'yourpassword':
-                print("[!] 不能使用默認密碼 'yourpassword'，請設置其他密碼")
+                print("[!] 不能使用默認密碼 'yourpassword'，請設置一個安全的密碼")
                 continue
             if len(password) < 6:
-                print("[!] 密碼長度至少需要 6 個字符，請重新輸入")
+                print("[!] 密碼長度至少需要 6 個字符")
                 continue
             
             # 確認密碼
-            confirm_password = getpass.getpass("[+] 請再次輸入密碼確認: ")
-            if password != confirm_password:
-                print("[!] 兩次輸入的密碼不一致，請重新輸入")
-                continue
-            
-            args.msf_password = password
-            print("[+] 密碼設置成功")
-            break
-        
-        # 使用使用者輸入覆蓋命令行參數
-        if not args.msf_server:
-            args.msf_server = user_config['msf_server']
-        if not args.msf_password:
-            args.msf_password = user_config['msf_password']
-        if not args.msf_port:
-            args.msf_port = user_config['msf_port']
-        if not args.msf_ssl:
-            args.msf_ssl = user_config['msf_ssl']
-        if not args.host:
-            args.host = user_config['mcp_host']
-        if not args.port:
-            args.port = user_config['mcp_port']
-
+            confirm_password = getpass.getpass("[+] 請再次輸入密碼以確認: ")
+            if password == confirm_password:
+                args.msf_password = password
+                break
+            else:
+                print("[!] 密碼不匹配，請重新輸入")
     
-    # 如果只是生成配置文件且指定了遠程主機，則跳過依賴檢查
-    if args.generate_trae_config and args.remote_host and not (args.start_msfrpcd or (not args.generate_trae_config)):
-        print("[*] 檢測到遠程配置模式，跳過本地依賴檢查")
-    else:
-        # 檢查依賴
-        missing = check_prerequisites()
-        if missing:
-            print("[!] 缺少以下依賴:")
-            for item in missing:
-                print(f"  - {item}")
-            print("請安裝缺少的依賴後再試")
-            sys.exit(1)
+    # 檢查先決條件
+    print("[*] 檢查系統先決條件...")
+    missing = check_prerequisites()
+    if missing:
+        print("[!] 缺少以下依賴:")
+        for item in missing:
+            print(f"    - {item}")
+        print("[!] 請安裝缺少的依賴後重新運行")
+        return 1
+    
+    print("[+] 系統先決條件檢查通過")
     
     # 啟動 Metasploit RPC 服務
     if args.start_msfrpcd:
+        print("[*] 啟動 Metasploit RPC 服務...")
         if not start_msfrpcd(args.msf_password, args.msf_server, args.msf_port, args.msf_ssl):
             print("[!] 啟動 Metasploit RPC 服務失敗")
-            sys.exit(1)
+            return 1
         
+        # 等待 RPC 服務啟動
         print("[*] 等待 Metasploit RPC 服務啟動...")
-        time.sleep(5)
+        time.sleep(3)
     
-    # 啟動 MetasploitMCP 服務器（僅在非純配置生成模式下）
-    if not (args.generate_trae_config and args.remote_host and not args.start_msfrpcd):
-        if not start_metasploit_mcp(
-            args.transport, args.host, args.port, 
-            args.msf_password, args.msf_server, args.msf_port, 
-            args.msf_ssl, args.payload_dir
-        ):
-            print("[!] 啟動 MetasploitMCP 服務器失敗")
-            sys.exit(1)
+    # 啟動 MetasploitMCP 服務器
+    print("[*] 啟動 MetasploitMCP 服務器...")
+    if not start_metasploit_mcp(args.transport, args.host, args.port, args.msf_password, 
+                               args.msf_server, args.msf_port, args.msf_ssl, args.payload_dir):
+        print("[!] 啟動 MetasploitMCP 服務器失敗")
+        return 1
     
     # 生成 Trae AI MCP 配置文件
-    if args.generate_trae_config:
-        if not generate_trae_config(
-            args.msf_password, args.msf_server, args.msf_port, 
-            args.msf_ssl, args.payload_dir, args.mcp_path,
-            args.transport, args.remote_host, args.remote_port
-        ):
+    if args.generate_trae_config or args.remote_host:
+        print("[*] 生成 Trae AI MCP 配置文件...")
+        if not generate_trae_config(args.msf_password, args.msf_server, args.msf_port, args.msf_ssl, 
+                                   args.payload_dir, args.mcp_path, args.transport, 
+                                   args.remote_host, args.remote_port):
             print("[!] 生成 Trae AI MCP 配置文件失敗")
-            sys.exit(1)
+            return 1
     
-    print("[+] 所有操作完成！")
-    
-    if args.transport == "http":
-        print(f"[*] MetasploitMCP 服務器正在運行於: http://{args.host}:{args.port}")
-        print(f"[*] SSE 端點: http://{args.host}:{args.port}/sse")
-    
-    print("[*] 按 Ctrl+C 停止服務器")
+    print("[+] MetasploitMCP 服務器啟動完成")
+    print("[*] 服務器正在運行，按 Ctrl+C 停止")
     
     try:
         while True:
@@ -503,6 +478,8 @@ def main():
     except KeyboardInterrupt:
         print("\n[*] 正在停止服務器...")
         print("[+] 服務器已停止")
+    
+    return 0
 
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    sys.exit(main())
