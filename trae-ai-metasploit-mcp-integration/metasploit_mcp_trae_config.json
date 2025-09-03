@@ -1,0 +1,13 @@
+{
+    "mcpServers": {
+        "metasploit": {
+            "command": "npx",
+            "args": [
+                "mcp-remote",
+                "http://172.31.42.18:8085/sse",
+                "--allow-http"
+            ],
+            "env": {}
+        }
+    }
+}
