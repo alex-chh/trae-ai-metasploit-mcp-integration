@@ -423,12 +423,28 @@ def main():
                 continue
             
             # 確認密碼
-            confirm_password = getpass.getpass("[+] 請再次輸入密碼以確認: ")
-            if password == confirm_password:
-                args.msf_password = password
-                break
-            else:
-                print("[!] 密碼不匹配，請重新輸入")
+            confirm_password = getpass.getpass("[+] 請再次輸入密碼確認: ")
+            if password != confirm_password:
+                print("[!] 兩次輸入的密碼不一致，請重新輸入")
+                continue
+            
+            args.msf_password = password
+            print("[+] 密碼設置成功")
+            break
+        
+        # 使用使用者輸入覆蓋命令行參數
+        if not args.msf_server:
+            args.msf_server = user_config['msf_server']
+        if not args.msf_password:
+            args.msf_password = user_config['msf_password']
+        if not args.msf_port:
+            args.msf_port = user_config['msf_port']
+        if not args.msf_ssl:
+            args.msf_ssl = user_config['msf_ssl']
+        if not args.host:
+            args.host = user_config['mcp_host']
+        if not args.port:
+            args.port = user_config['mcp_port']
     
     # 檢查先決條件
     print("[*] 檢查系統先決條件...")
